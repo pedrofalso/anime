@@ -46,14 +46,14 @@ export class RegisterPage implements OnInit {
       return;
     }
 
-    const success = await this.authService.register(this.username.trim(), this.password.trim());
-    if (success) {
+    const result = await this.authService.register(this.username.trim(), this.password.trim());
+    if (result.success) {
       this.successMsg = '¡Cuenta creada con éxito! Redirigiendo al login...';
       setTimeout(() => {
         this.router.navigate(['/login']);
       }, 1500);
     } else {
-      this.error = 'Error al registrar. Puede que el usuario ya exista o la contraseña sea muy débil.';
+      this.error = result.message || 'Error al registrar. Inténtalo de nuevo.';
     }
   }
 }

@@ -135,7 +135,7 @@ export class AuthService {
     return true;
   }
 
-  async register(username: string, password?: string): Promise<boolean> {
+  async register(username: string, password?: string): Promise<{success: boolean, message?: string}> {
     const email = username.includes('@') ? username : `${username}@anime.local`;
     
     const { data, error } = await this.supabaseService.client.auth.signUp({
@@ -148,11 +148,25 @@ export class AuthService {
       }
     });
 
-    if (error || !data.user) {
+    if (error) {
       console.error('Register error:', error);
-      return false;
+      // Translate common Supabase errors to Spanish for better UX
+      let errorMsg = error.message;
+      if (errorMsg.includes('Password should contain')) {
+        errorMsg = 'La contraseña debe contener al menos 6 caracteres, una mayúscula y un número.';
+      } else if (errorMsg.includes('User already registered')) {
+        errorMsg = 'Este usuario o correo ya está registrado.';
+      } else if (errorMsg.includes('weak_password')) {
+         errorMsg = 'Contraseña demasiado débil. Usa números y letras.';
+      }
+      return { success: false, message: errorMsg };
     }
-    return true;
+    
+    if (!data.user) {
+      return { success: false, message: 'Error desconocido al crear el usuario.' };
+    }
+    
+    return { success: true };
   }
 
   async logout(): Promise<void> {
