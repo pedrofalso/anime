@@ -6,9 +6,12 @@
         <ion-icon name="person-circle-outline" slot="start"></ion-icon>
         Iniciar Sesión
       </ion-button>
-      <ion-button *ngIf="isLoggedIn" routerLink="/profile" color="primary" fill="clear">
-        <ion-icon name="person-circle" slot="start" style="font-size: 24px; margin-right: 4px;"></ion-icon>
-        <span style="font-weight: bold;">{{ user?.username }}</span>
+      <ion-button *ngIf="isLoggedIn" routerLink="/profile" color="primary" fill="clear" style="--padding-start: 8px; --padding-end: 8px;">
+        <ion-avatar *ngIf="user?.avatarUrl" slot="start" style="width: 28px; height: 28px; margin-right: 8px;">
+          <img [src]="user.avatarUrl" style="object-fit: cover;" />
+        </ion-avatar>
+        <ion-icon *ngIf="!user?.avatarUrl" name="person-circle" slot="start" style="font-size: 24px; margin-right: 4px;"></ion-icon>
+        <span style="font-weight: bold; text-transform: none;">{{ user?.username }}</span>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>

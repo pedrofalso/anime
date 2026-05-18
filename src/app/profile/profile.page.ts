@@ -21,6 +21,7 @@ export class ProfilePage implements OnInit {
   totalEpisodes: number = 0;
   totalDays: number = 0;
   isPublicView: boolean = false;
+  isSettingsOpen: boolean = false;
 
   constructor(
     private authService: AuthService, 
@@ -93,13 +94,6 @@ export class ProfilePage implements OnInit {
     this.router.navigate(['/anime-list']);
   }
 
-  async openSettings() {
-    // We can implement a more detailed settings modal here
-    this.themeService.toggleTheme();
-    const isDark = this.themeService.isDarkMode();
-    this.showToast(`Modo ${isDark ? 'Oscuro' : 'Claro'} activado`, isDark ? 'dark' : 'light');
-  }
-
   async changeAccentColor(color: string) {
     this.themeService.setAccentColor(color);
     if (!this.isPublicView) {
@@ -112,13 +106,22 @@ export class ProfilePage implements OnInit {
     const file = event.target.files[0];
     if (!file || !this.user) return;
 
-    const path = `avatars/${this.user.username}_${Date.now()}.png`;
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      if (this.user) this.user.avatarUrl = e.target.result;
+    };
+    reader.readAsDataURL(file);
+
+    const path = `${this.user.username}_avatar_${Date.now()}.png`;
     const url = await this.authService.uploadImage(path, file);
     
     if (url) {
       await this.authService.updateProfile({ avatarUrl: url });
       this.user.avatarUrl = url;
       this.showToast('Avatar actualizado correctamente', 'success');
+    } else {
+      this.showToast('La imagen se ve localmente, pero hubo un error al subirla a la nube (Supabase).', 'warning');
     }
   }
 
@@ -126,13 +129,22 @@ export class ProfilePage implements OnInit {
     const file = event.target.files[0];
     if (!file || !this.user) return;
 
-    const path = `banners/${this.user.username}_${Date.now()}.png`;
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      if (this.user) this.user.bannerUrl = e.target.result;
+    };
+    reader.readAsDataURL(file);
+
+    const path = `${this.user.username}_banner_${Date.now()}.png`;
     const url = await this.authService.uploadImage(path, file);
     
     if (url) {
       await this.authService.updateProfile({ bannerUrl: url });
       this.user.bannerUrl = url;
       this.showToast('Banner actualizado correctamente', 'success');
+    } else {
+      this.showToast('La imagen se ve localmente, pero hubo un error al subirla a la nube (Supabase).', 'warning');
     }
   }
 
