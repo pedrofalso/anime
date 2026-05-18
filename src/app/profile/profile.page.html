@@ -1,0 +1,223 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+      <ion-back-button defaultHref="/anime-list"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Perfil de {{ user?.username }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="logout()" *ngIf="!isPublicView">Cerrar sesión</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="profile-page">
+  <div class="profile-container" *ngIf="user">
+    <div class="public-badge" *ngIf="isPublicView">
+      <ion-icon name="eye-outline"></ion-icon> Perfil Público
+    </div>
+
+    <!-- Banner de Perfil -->
+    <div class="profile-banner" [style.background-image]="'url(' + (user.bannerUrl || 'assets/default-banner.jpg') + ')'">
+      <div class="banner-overlay" *ngIf="!isPublicView" (click)="bannerInput.click()">
+        <ion-icon name="camera-outline"></ion-icon>
+        <span>Cambiar Portada</span>
+      </div>
+      <input type="file" #bannerInput style="display: none" (change)="onBannerSelected($event)" accept="image/*">
+    </div>
+    <!-- Contenedor principal estilo MyAnimeList -->
+    <div class="mal-layout">
+      <!-- Columna Izquierda -->
+      <aside class="left-col">
+        <div class="avatar-box">
+          <img *ngIf="user.avatarUrl" [src]="user.avatarUrl" class="user-avatar" (click)="!isPublicView && avatarInput.click()">
+          <div *ngIf="!user.avatarUrl" class="avatar-placeholder" (click)="!isPublicView && avatarInput.click()">
+            <ion-icon name="camera-outline"></ion-icon>
+            <span>Añadir Imagen</span>
+          </div>
+          <input type="file" #avatarInput style="display: none" (change)="onAvatarSelected($event)" accept="image/*">
+        </div>
+
+        <div class="user-info">
+          <div class="info-row">
+            <strong>Última conexión</strong>
+            <span>Ahora</span>
+          </div>
+          <div class="info-row">
+            <strong>Unido</strong>
+            <span>{{ user.joinDate }}</span>
+          </div>
+        </div>
+
+        <div class="list-buttons" *ngIf="!isPublicView">
+          <ion-button expand="block" color="primary" class="mal-btn" routerLink="/anime-list">Explorar Anime</ion-button>
+          <ion-button expand="block" color="secondary" class="mal-btn" (click)="openSettings()">Ajustes</ion-button>
+        </div>
+
+        <ul class="side-menu">
+          <li class="active">Estadísticas</li>
+        </ul>
+
+        <div class="theme-selector" *ngIf="!isPublicView">
+          <h3>Temas de Acento</h3>
+          <div class="theme-grid">
+            <div class="theme-dot blue" (click)="changeAccentColor('blue')" title="Clásico"></div>
+            <div class="theme-dot red" (click)="changeAccentColor('akatsuki')" title="Akatsuki"></div>
+            <div class="theme-dot pink" (click)="changeAccentColor('sakura')" title="Sakura"></div>
+            <div class="theme-dot yellow" (click)="changeAccentColor('cyberpunk')" title="Cyberpunk"></div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Columna Derecha -->
+      <main class="right-col">
+        <div class="bio-section">
+          <p>No hay biografía todavía. <a href="#">Escríbela ahora</a>.</p>
+        </div>
+
+        <h2>Estadísticas</h2>
+        <div class="stats-section">
+          <div class="stats-header">
+            <h3>Anime Stats</h3>
+            <div class="stats-links">
+              <a href="#">Todas las estadísticas</a>
+            </div>
+          </div>
+
+          <div class="stats-summary">
+            <div class="stat-item">
+              <span>Días: </span><strong>{{ totalDays | number:'1.1-1' }}</strong>
+            </div>
+            <div class="stat-item">
+              <span>Puntuación Media: </span><strong>0.00</strong>
+            </div>
+          </div>
+
+          <!-- Barra de progreso de colores -->
+          <div class="status-bar">
+            <div class="bar-watching" [style.width]="getPercent('watching')"></div>
+            <div class="bar-completed" [style.width]="getPercent('completed')"></div>
+            <div class="bar-onhold" [style.width]="getPercent('onHold')"></div>
+            <div class="bar-dropped" [style.width]="getPercent('dropped')"></div>
+            <div class="bar-ptw" [style.width]="getPercent('planToWatch')"></div>
+          </div>
+
+          <!-- Detalles de categorías -->
+          <div class="category-details">
+            <div class="cat-col">
+              <div class="cat-row">
+                <div class="cat-label">
+                  <span class="dot watching"></span> Viendo
+                </div>
+                <div class="cat-value">{{ lists.watching.length }}</div>
+              </div>
+              <div class="cat-row">
+                <div class="cat-label">
+                  <span class="dot completed"></span> Completados
+                </div>
+                <div class="cat-value">{{ lists.completed.length }}</div>
+              </div>
+              <div class="cat-row">
+                <div class="cat-label">
+                  <span class="dot onhold"></span> En Pausa
+                </div>
+                <div class="cat-value">{{ lists.onHold.length }}</div>
+              </div>
+              <div class="cat-row">
+                <div class="cat-label">
+                  <span class="dot dropped"></span> Abandonados
+                </div>
+                <div class="cat-value">{{ lists.dropped.length }}</div>
+              </div>
+              <div class="cat-row">
+                <div class="cat-label">
+                  <span class="dot ptw"></span> Pendientes
+                </div>
+                <div class="cat-value">{{ lists.planToWatch.length }}</div>
+              </div>
+            </div>
+
+            <div class="cat-col right-stats">
+              <div class="cat-row">
+                <div class="cat-label">Total</div>
+                <div class="cat-value">{{ totalEntries }}</div>
+              </div>
+              <div class="cat-row">
+                <div class="cat-label">Vistos de Nuevo</div>
+                <div class="cat-value">0</div>
+              </div>
+              <div class="cat-row">
+                <div class="cat-label">Episodios</div>
+                <div class="cat-value">{{ totalEpisodes }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="section-title">Favoritos <a href="#" class="view-all">Ver Todos</a></h2>
+        <div class="favorites-section">
+          <div *ngIf="lists.favorites.length === 0" class="no-favorites">
+            No tienes animes favoritos todavía.
+          </div>
+          <div class="fav-grid">
+            <div class="fav-item" *ngFor="let anime of lists.favorites">
+              <img [src]="anime.image" [alt]="anime.title" [routerLink]="['/anime', anime.id]">
+              <div class="fav-title" [routerLink]="['/anime', anime.id]">{{ anime.title }}</div>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="section-title">Viendo</h2>
+        <div class="favorites-section">
+          <div *ngIf="lists.watching.length === 0" class="no-favorites">
+            No estás viendo ningún anime actualmente.
+          </div>
+          <div class="fav-grid">
+            <div class="fav-item" *ngFor="let anime of lists.watching">
+              <img [src]="anime.image" [alt]="anime.title" [routerLink]="['/anime', anime.id]">
+              <div class="fav-title" [routerLink]="['/anime', anime.id]">{{ anime.title }}</div>
+              <div class="item-progress" *ngIf="anime.episodes > 0">
+                <span class="ep-text">{{ anime.watched_episodes || 0 }} / {{ anime.episodes }}</span>
+                <div class="anime-progress-container">
+                  <div class="anime-progress-fill" [style.width.%]="((anime.watched_episodes || 0) / anime.episodes) * 100"></div>
+                </div>
+              </div>
+              <div class="item-rating" *ngIf="anime.rating">
+                 <ion-icon name="star" color="warning"></ion-icon> {{ anime.rating }}/5
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="section-title">Pendientes</h2>
+        <div class="favorites-section">
+          <div *ngIf="lists.planToWatch.length === 0" class="no-favorites">
+            No tienes animes pendientes.
+          </div>
+          <div class="fav-grid">
+            <div class="fav-item" *ngFor="let anime of lists.planToWatch">
+              <img [src]="anime.image" [alt]="anime.title" [routerLink]="['/anime', anime.id]">
+              <div class="fav-title" [routerLink]="['/anime', anime.id]">{{ anime.title }}</div>
+            </div>
+          </div>
+        </div>
+
+        <h2 class="section-title">Abandonados</h2>
+        <div class="favorites-section">
+          <div *ngIf="lists.dropped.length === 0" class="no-favorites">
+            No tienes animes abandonados.
+          </div>
+          <div class="fav-grid">
+            <div class="fav-item" *ngFor="let anime of lists.dropped">
+              <img [src]="anime.image" [alt]="anime.title" [routerLink]="['/anime', anime.id]">
+              <div class="fav-title" [routerLink]="['/anime', anime.id]">{{ anime.title }}</div>
+              <div class="item-rating" *ngIf="anime.rating">
+                 <ion-icon name="star" color="warning"></ion-icon> {{ anime.rating }}/5
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</ion-content>

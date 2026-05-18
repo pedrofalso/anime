@@ -1,0 +1,409 @@
+.status-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 50vh;
+  gap: 1rem;
+  color: var(--ion-color-medium);
+  text-align: center;
+  padding: 2rem;
+}
+
+.anime-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.anime-hero {
+  position: relative;
+  width: 100%;
+  height: 350px;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--ion-color-dark);
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, var(--ion-background-color) 0%, rgba(0, 0, 0, 0.7) 50%, rgba(0, 0, 0, 0.4) 100%);
+}
+
+.hero-content {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: flex-end;
+  padding: 2rem;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.poster {
+  width: 200px;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  transform: translateY(20px);
+}
+
+.title-group {
+  flex: 1;
+  padding-bottom: 20px;
+  color: white;
+
+  h1 {
+    font-size: 24px;
+    margin: 0 0 10px 0;
+    font-weight: bold;
+  }
+
+  .tags {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+
+    .tag {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+
+      &.score {
+        background: #ff9800;
+        color: #fff;
+      }
+
+      &.rank {
+        background: #3880ff;
+        color: #fff;
+      }
+    }
+  }
+
+  .user-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 8px;
+    border-radius: 8px;
+    margin-top: 10px;
+
+    .list-select {
+      background: #222;
+      color: #fff;
+      border-radius: 4px;
+      padding: 5px 10px;
+      min-width: 150px;
+    }
+
+    .fav-btn {
+      --padding-start: 5px;
+      --padding-end: 5px;
+      margin: 0;
+
+      ion-icon {
+        font-size: 24px;
+      }
+    }
+  }
+
+  .rating-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 8px 12px;
+    border-radius: 8px;
+
+    .rating-label {
+      font-size: 14px;
+      font-weight: bold;
+      color: #fff;
+    }
+
+    .stars {
+      display: flex;
+      gap: 4px;
+
+      ion-icon {
+        font-size: 20px;
+        cursor: pointer;
+        transition: transform 0.2s;
+
+        &:hover {
+          transform: scale(1.2);
+        }
+      }
+    }
+  }
+
+  .episode-tracking {
+    margin-top: 15px;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 12px;
+    border-radius: 12px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 300px;
+
+    .ep-label {
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.8);
+      margin-bottom: 5px;
+    }
+
+    .ep-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .ep-count {
+        font-size: 1.1rem;
+        color: white;
+        
+        strong {
+          color: var(--app-accent);
+          font-size: 1.3rem;
+        }
+      }
+
+      ion-button {
+        --color: white;
+        margin: 0;
+        height: 32px;
+        --padding-start: 0;
+        --padding-end: 0;
+        
+        ion-icon {
+          font-size: 1.6rem;
+        }
+      }
+    }
+
+    .anime-progress-container {
+      margin-top: 10px;
+    }
+  }
+}
+
+.main-content {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 3rem;
+  padding: 3rem 2rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+
+  section h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--ion-color-primary);
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(var(--ion-color-primary-rgb), 0.2);
+  }
+}
+
+/* Recomendaciones */
+.recommendations-section {
+  margin-top: 2rem;
+
+  .recommendations-scroll {
+    display: flex;
+    overflow-x: auto;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+
+    .rec-item {
+      min-width: 120px;
+      cursor: pointer;
+
+      img {
+        width: 100%;
+        height: 180px;
+        object-fit: cover;
+        border-radius: 8px;
+      }
+
+      p {
+        margin-top: 5px;
+        font-size: 0.8rem;
+        color: #ccc;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+  }
+}
+
+/* Reseñas y Comentarios */
+.comments-section {
+  margin-top: 3rem;
+
+  .comment-form {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+
+    .rating-input {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+
+      .stars {
+        display: flex;
+        gap: 4px;
+        font-size: 1.2rem;
+
+        ion-icon {
+          cursor: pointer;
+        }
+
+        .rating-value {
+          color: var(--ion-color-warning);
+          font-weight: bold;
+        }
+      }
+    }
+
+    .comment-input {
+      --background: rgba(0, 0, 0, 0.2);
+      --color: #fff;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+  }
+
+  .comment-item {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--ion-color-primary);
+
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+
+      .comment-user {
+        font-weight: bold;
+        color: var(--ion-color-primary);
+      }
+
+      .comment-rating {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        background: rgba(255, 196, 0, 0.1);
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: var(--ion-color-warning);
+        font-weight: bold;
+        font-size: 0.85rem;
+      }
+
+      .comment-date {
+        font-size: 0.8rem;
+        color: #777;
+      }
+    }
+  }
+}
+
+.video-container {
+  position: relative;
+  padding-bottom: 56.25%;
+  height: 0;
+  overflow: hidden;
+  border-radius: 12px;
+
+  iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.info-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 1.5rem;
+
+  ul {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    li {
+      display: flex;
+      flex-direction: column;
+      color: #aaa;
+
+      strong {
+        color: #fff;
+      }
+    }
+  }
+}
+
+.capitalize {
+  text-transform: capitalize;
+}
+
+@media (max-width: 992px) {
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .poster {
+    transform: translateY(0);
+    width: 160px;
+    height: 240px;
+  }
+}

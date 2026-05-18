@@ -1,0 +1,82 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>AnimeWatch - Descubrir</ion-title>
+    <ion-buttons slot="end">
+      <ion-button routerLink="/anime-list">Explorar todo</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="home-content">
+  <div class="welcome-hero">
+    <h1>Tu próximo anime te espera</h1>
+    <p>Explora géneros, novedades y gestiona tu lista personal.</p>
+  </div>
+
+  <div class="section-container">
+    <div class="section-header">
+      <h2>Descubrir por Género</h2>
+      <a routerLink="/anime-list">Ver todos</a>
+    </div>
+
+    <div class="genres-grid">
+      <div class="genre-card" *ngFor="let genre of genres" (click)="goToGenre(genre.mal_id)">
+        <span>{{ genre.name }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-container">
+    <div class="section-header">
+      <h2>Más Populares</h2>
+      <a routerLink="/anime-list">Ver todos</a>
+    </div>
+
+    <div class="featured-list" *ngIf="!loading">
+      <div class="anime-card" *ngFor="let anime of featured" [routerLink]="['/anime', anime.id]">
+        <img [src]="anime.image" [alt]="anime.title">
+        <div class="anime-info">
+          <h3>{{ anime.title }}</h3>
+          <div class="meta">
+            <span class="score">⭐ {{ anime.score }}</span>
+            <span class="eps">{{ anime.episodes }} eps</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="loading" class="loading-spinner">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  </div>
+
+  <div class="section-container" *ngIf="upcoming.length > 0">
+    <div class="section-header">
+      <h2>Próximos Estrenos</h2>
+      <a routerLink="/anime-list">Ver todos</a>
+    </div>
+
+    <div class="featured-list">
+      <div class="anime-card upcoming-card" *ngFor="let anime of upcoming" [routerLink]="['/anime', anime.id]">
+        <div class="countdown-badge">
+          <ion-icon name="time-outline"></ion-icon>
+          {{ getCountdown(anime.airedString || '') }}
+        </div>
+        <img [src]="anime.image" [alt]="anime.title">
+        <div class="anime-info">
+          <h3>{{ anime.title }}</h3>
+          <div class="meta">
+            <span class="status">{{ anime.status | titlecase }}</span>
+            <span class="season">{{ anime.season }} {{ anime.year }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quick-access">
+    <ion-button expand="block" color="primary" routerLink="/profile">
+      Mi Perfil y Listas
+    </ion-button>
+  </div>
+</ion-content>

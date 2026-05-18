@@ -1,0 +1,150 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Catálogo</ion-title>
+    <ion-buttons slot="end">
+      <ion-button *ngIf="!isLoggedIn" routerLink="/login" color="primary" fill="solid" shape="round" style="margin-right: 10px;">
+        <ion-icon name="person-circle-outline" slot="start"></ion-icon>
+        Iniciar Sesión
+      </ion-button>
+      <ion-button *ngIf="isLoggedIn" routerLink="/profile" color="primary" fill="clear">
+        <ion-icon name="person-circle" slot="start" style="font-size: 24px; margin-right: 4px;"></ion-icon>
+        <span style="font-weight: bold;">{{ user?.username }}</span>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="catalog-page">
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Catálogo</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <div class="catalog-shell" *ngIf="!loading && !error; else statusBlock">
+    <section class="catalog-main">
+      <div class="catalog-top">
+        <div>
+          <h2>Catálogo de anime</h2>
+          <p>Explora los estrenos y novedades en un solo lugar.</p>
+        </div>
+        <ion-searchbar placeholder="Buscar anime..." [value]="searchQuery" (ionInput)="searchChanged($event)"></ion-searchbar>
+        
+        <div class="filter-bar">
+          <ion-item lines="none" class="filter-item">
+            <ion-label position="stacked">Género</ion-label>
+            <ion-select [(ngModel)]="selectedGenre" placeholder="Todos" (ionChange)="onFilterChange()">
+              <ion-select-option value="">Todos</ion-select-option>
+              <ion-select-option *ngFor="let g of genres" [value]="g.id">{{ g.name }}</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item lines="none" class="filter-item">
+            <ion-label position="stacked">Estado</ion-label>
+            <ion-select [(ngModel)]="selectedStatus" placeholder="Cualquiera" (ionChange)="onFilterChange()">
+              <ion-select-option value="">Cualquiera</ion-select-option>
+              <ion-select-option value="airing">En emisión</ion-select-option>
+              <ion-select-option value="complete">Finalizado</ion-select-option>
+              <ion-select-option value="upcoming">Próximamente</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-button fill="clear" (click)="clearFilters()" *ngIf="isSearching">
+            Limpiar
+          </ion-button>
+        </div>
+      </div>
+
+      <!-- Resultados de búsqueda -->
+      <div *ngIf="isSearching" class="category-block">
+        <div class="category-header">
+          <h3>Resultados para "{{ searchQuery || 'filtros' }}"</h3>
+        </div>
+        <div class="card-grid" *ngIf="searchResults.length; else emptyResults">
+          <article *ngFor="let anime of searchResults" class="anime-card" (click)="viewAnime(anime)">
+            <div class="cover">
+              <img [src]="anime.image" [alt]="anime.title" />
+              <ion-button *ngIf="isLoggedIn" fill="clear" class="quick-fav-btn" (click)="toggleFavorite($event, anime)">
+                <ion-icon [name]="isFavorite(anime) ? 'heart' : 'heart-outline'" [color]="isFavorite(anime) ? 'danger' : 'light'"></ion-icon>
+              </ion-button>
+            </div>
+            <div class="anime-meta">
+              <h4>{{ anime.title }}</h4>
+              <p>{{ anime.episodes }} eps</p>
+            </div>
+          </article>
+        </div>
+        <ng-template #emptyResults>
+          <div class="status-block">
+            <p>No se encontraron resultados.</p>
+          </div>
+        </ng-template>
+      </div>
+
+      <!-- Catálogo Normal (Categorías) -->
+      <div *ngIf="!isSearching && categories.length; else emptyCatalog">
+        <div *ngFor="let category of categories" class="category-block">
+          <div class="category-header">
+            <h3>{{ category.title }}</h3>
+          </div>
+
+          <div class="card-grid">
+            <article *ngFor="let anime of category.items" class="anime-card" (click)="viewAnime(anime)">
+              <div class="cover">
+                <img [src]="anime.image" [alt]="anime.title" />
+                <ion-button *ngIf="isLoggedIn" fill="clear" class="quick-fav-btn" (click)="toggleFavorite($event, anime)">
+                  <ion-icon [name]="isFavorite(anime) ? 'heart' : 'heart-outline'" [color]="isFavorite(anime) ? 'danger' : 'light'"></ion-icon>
+                </ion-button>
+              </div>
+              <div class="anime-meta">
+                <h4>{{ anime.title }}</h4>
+                <p>{{ anime.episodes }} eps</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="catalog-sidebar">
+      <div class="sidebar-card">
+        <h3>Más episodios</h3>
+        <ol>
+          <li *ngFor="let anime of topEpisodes"> <strong>{{ anime.title }}</strong> <span>{{ anime.episodes }}
+              eps</span> </li>
+        </ol>
+      </div>
+
+      <div class="sidebar-card">
+        <h3>Most airing animes</h3>
+        <ol>
+          <li *ngFor="let anime of mostAiring"> <strong>{{ anime.title }}</strong> <span>{{ anime.score }} ⭐</span>
+          </li>
+        </ol>
+      </div>
+
+      <div class="sidebar-card">
+        <h3>Más populares del mes</h3>
+        <ol>
+          <li *ngFor="let anime of popularMonth"> <strong>{{ anime.title }}</strong> <span>{{ anime.score }} ⭐</span>
+          </li>
+        </ol>
+      </div>
+    </aside>
+  </div>
+
+  <ng-template #statusBlock>
+    <div class="status-block">
+      <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+      <p *ngIf="loading">Cargando catálogo...</p>
+      <p *ngIf="error">Error al cargar catálogo. Revisa la API o la conexión.</p>
+    </div>
+  </ng-template>
+
+  <ng-template #emptyCatalog>
+    <div class="status-block">
+      <p>No se encontraron animes para mostrar.</p>
+    </div>
+  </ng-template>
+
+</ion-content>

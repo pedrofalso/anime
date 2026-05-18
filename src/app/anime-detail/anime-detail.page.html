@@ -1,0 +1,206 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/anime-list"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ anime?.title || 'Cargando...' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="anime-detail-content">
+  <div *ngIf="loading" class="status-block">
+    <ion-spinner name="crescent"></ion-spinner>
+    <p>Cargando detalles del anime...</p>
+  </div>
+
+  <div *ngIf="error" class="status-block">
+    <p>Error al cargar el anime. Es posible que no exista o haya un error de red.</p>
+  </div>
+
+  <div *ngIf="anime && !loading" class="anime-container">
+    <div class="anime-hero" [ngStyle]="{'background-image': 'url(' + (anime.image || '') + ')'}">
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <img [src]="anime.image" [alt]="anime.title" class="poster">
+        <div class="title-group">
+          <h1>{{ anime.title }}</h1>
+          <div class="tags">
+            <span class="tag score">⭐ {{ anime.score }}</span>
+            <span class="tag rank">#{{ anime.rank }} Rank</span>
+            <span class="tag status">{{ anime.status | titlecase }}</span>
+          </div>
+          
+          <div class="user-controls" *ngIf="isLoggedIn">
+            <ion-select class="list-select" [value]="currentCategory" (ionChange)="onCategoryChange($event)" placeholder="Añadir a la lista...">
+              <ion-select-option value="">Quitar de la lista</ion-select-option>
+              <ion-select-option value="watching">Viendo</ion-select-option>
+              <ion-select-option value="completed">Completado</ion-select-option>
+              <ion-select-option value="onHold">En Pausa</ion-select-option>
+              <ion-select-option value="dropped">Abandonado</ion-select-option>
+              <ion-select-option value="planToWatch">Pendiente</ion-select-option>
+            </ion-select>
+            
+            <ion-button fill="clear" class="fav-btn" (click)="toggleFavorite()">
+              <ion-icon [name]="isFavorite ? 'heart' : 'heart-outline'" [color]="isFavorite ? 'danger' : 'light'"></ion-icon>
+            </ion-button>
+          </div>
+          <div class="rating-controls" *ngIf="isLoggedIn && currentCategory">
+            <span class="rating-label">Tu Puntuación:</span>
+            <div class="stars">
+              <ion-icon *ngFor="let star of [1,2,3,4,5]" 
+                        [name]="userRating >= star ? 'star' : 'star-outline'" 
+                        color="warning" 
+                        class="rating-star"
+                        (click)="setRating(star)"></ion-icon>
+            </div>
+          </div>
+          <div class="user-controls-login" *ngIf="!isLoggedIn">
+            <ion-button fill="outline" color="light" routerLink="/login" routerDirection="forward">
+              Inicia sesión para añadir a tus listas
+            </ion-button>
+          </div>
+
+          <!-- Tracking de episodios -->
+          <div class="episode-tracking" *ngIf="isLoggedIn">
+            <div class="ep-label">Episodios:</div>
+            <div class="ep-controls">
+              <ion-button fill="clear" size="small" (click)="decrementEpisode()">
+                <ion-icon name="remove-circle-outline"></ion-icon>
+              </ion-button>
+              <span class="ep-count"><strong>{{ watchedEpisodes }}</strong> / {{ anime.episodes || '?' }}</span>
+              <ion-button fill="clear" size="small" (click)="incrementEpisode()">
+                <ion-icon name="add-circle-outline"></ion-icon>
+              </ion-button>
+            </div>
+            <div class="anime-progress-container" *ngIf="anime.episodes > 0">
+              <div class="anime-progress-fill" [style.width.%]="(watchedEpisodes / anime.episodes) * 100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-content">
+      <div class="left-col">
+        <section class="synopsis-section">
+          <h2>Sinopsis</h2>
+          <p>{{ anime.synopsis }}</p>
+        </section>
+
+        <section class="background-section" *ngIf="anime.background">
+          <h2>Contexto</h2>
+          <p>{{ anime.background }}</p>
+        </section>
+
+        <section class="trailer-section" *ngIf="safeTrailerUrl">
+          <h2>Tráiler</h2>
+          <div class="video-container">
+            <iframe [src]="safeTrailerUrl" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </section>
+
+        <!-- Sección de Recomendaciones -->
+        <section class="recommendations-section" *ngIf="recommendations.length > 0">
+          <h2>Similares a este</h2>
+          <div class="recommendations-scroll">
+            <div class="rec-item" *ngFor="let rec of recommendations" [routerLink]="['/anime', rec.id]">
+              <img [src]="rec.image" [alt]="rec.title">
+              <p>{{ rec.title }}</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sección de Reseñas -->
+        <section class="comments-section">
+          <h2>Reseñas de la Comunidad</h2>
+          
+          <!-- Formulario para reseñar -->
+          <div class="comment-form" *ngIf="isLoggedIn">
+            <div *ngIf="!isGuest; else guestMessage">
+              <h3>Escribe tu reseña</h3>
+              <div class="rating-input">
+                <span>Tu nota:</span>
+                <div class="stars">
+                  <ion-icon *ngFor="let star of [1,2,3,4,5,6,7,8,9,10]" 
+                            [name]="userRating >= star ? 'star' : 'star-outline'" 
+                            color="warning" 
+                            (click)="setRating(star)"></ion-icon>
+                  <span class="rating-value">{{ userRating }}/10</span>
+                </div>
+              </div>
+              <ion-textarea 
+                placeholder="¿Qué te ha parecido este anime? Comparte tu opinión detallada..." 
+                [(ngModel)]="newComment" 
+                rows="4" 
+                class="comment-input">
+              </ion-textarea>
+              <div class="form-actions">
+                <ion-button (click)="sendComment()" [disabled]="!newComment.trim() || userRating === 0" color="primary">
+                  Publicar Reseña
+                </ion-button>
+              </div>
+            </div>
+            <ng-template #guestMessage>
+              <div class="guest-msg">
+                <ion-icon name="information-circle-outline"></ion-icon>
+                <p>Estás en modo invitado. <a routerLink="/login">Inicia sesión</a> para publicar una reseña.</p>
+              </div>
+            </ng-template>
+          </div>
+          <div class="comment-form" *ngIf="!isLoggedIn">
+            <div class="guest-msg">
+              <ion-icon name="lock-closed-outline"></ion-icon>
+              <p>Debes estar registrado para comentar. <a routerLink="/login">Iniciar Sesión</a></p>
+            </div>
+          </div>
+
+          <!-- Lista de comentarios -->
+          <div class="comments-list">
+            <div *ngIf="comments.length === 0" class="no-comments">
+              Aún no hay comentarios. ¡Sé el primero en comentar!
+            </div>
+            <div class="comment-item" *ngFor="let comment of comments">
+              <div class="comment-header">
+                <span class="comment-user">{{ comment.username }}</span>
+                <span class="comment-rating" *ngIf="comment.rating">
+                  <ion-icon name="star" color="warning"></ion-icon>
+                  {{ comment.rating }}/10
+                </span>
+                <span class="comment-date">{{ comment.created_at | date:'short' }}</span>
+              </div>
+              <div class="comment-body">
+                {{ comment.content }}
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="right-col">
+        <div class="info-card">
+          <h3>Información</h3>
+          <ul>
+            <li><strong>Tipo:</strong> {{ anime.source }}</li>
+            <li><strong>Episodios:</strong> {{ anime.episodes }}</li>
+            <li><strong>Estado:</strong> {{ anime.status }}</li>
+            <li><strong>Emitido:</strong> {{ anime.airedString }}</li>
+            <li><strong>Estreno:</strong> <span class="capitalize">{{ anime.season }} {{ anime.year || '' }}</span></li>
+            <li><strong>Estudios:</strong> {{ anime.studios?.join(', ') || 'Desconocido' }}</li>
+            <li><strong>Géneros:</strong> {{ anime.genres?.join(', ') || 'Desconocido' }}</li>
+            <li><strong>Duración:</strong> {{ anime.duration }}</li>
+            <li><strong>Clasificación:</strong> {{ anime.rating }}</li>
+          </ul>
+        </div>
+        
+        <div class="info-card stats-card">
+          <h3>Estadísticas</h3>
+          <ul>
+            <li><strong>Popularidad:</strong> #{{ anime.popularity }}</li>
+            <li><strong>Favoritos:</strong> {{ anime.favorites }}</li>
+            <li><strong>Miembros:</strong> {{ anime.members }}</li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+</ion-content>

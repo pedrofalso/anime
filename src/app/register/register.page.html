@@ -1,0 +1,46 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/login"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Registro</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="auth-page">
+  <div class="auth-container">
+    <div class="auth-header">
+      <h1>Crea una cuenta</h1>
+      <p>Únete a pedro anime List</p>
+    </div>
+
+    <div class="auth-form">
+      <ion-item>
+        <ion-label position="floating">Elige un nombre de usuario</ion-label>
+        <ion-input [(ngModel)]="username" type="text" placeholder="Tu usuario..."></ion-input>
+      </ion-item>
+
+      <ion-item>
+        <ion-label position="floating">Elige una contraseña</ion-label>
+        <ion-input [(ngModel)]="password" [type]="showPassword ? 'text' : 'password'" placeholder="Tu contraseña..."></ion-input>
+        <ion-button slot="end" fill="clear" (click)="togglePassword()" style="margin-top: auto;">
+          <ion-icon slot="icon-only" [name]="showPassword ? 'eye-off' : 'eye'" color="medium"></ion-icon>
+        </ion-button>
+      </ion-item>
+
+      <ion-text color="danger" *ngIf="error">
+        <p>{{ error }}</p>
+      </ion-text>
+      
+      <ion-text color="success" *ngIf="successMsg">
+        <p>{{ successMsg }}</p>
+      </ion-text>
+
+      <ion-button expand="block" (click)="register()" class="submit-btn" color="secondary">Registrarse</ion-button>
+      
+      <div class="auth-footer">
+        <p>¿Ya tienes una cuenta? <a routerLink="/login">Inicia sesión</a></p>
+      </div>
+    </div>
+  </div>
+</ion-content>

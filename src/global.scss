@@ -1,0 +1,97 @@
+/*
+ * App Global CSS
+ * ----------------------------------------------------------------------------
+ * Put style rules here that you want to apply globally. These styles are for
+ * the entire app and not just one component. Additionally, this file can be
+ * used as an entry point to import other CSS/Sass files to be included in the
+ * output CSS.
+ * For more information on global stylesheets, visit the documentation:
+ * https://ionicframework.com/docs/layout/global-stylesheets
+ */
+
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/angular/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+/* Optional CSS utils that can be commented out */
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/**
+ * Ionic Dark Mode
+ * -----------------------------------------------------
+ * For more info, please see:
+ * https://ionicframework.com/docs/theming/dark-mode
+ */
+
+/* @import "@ionic/angular/css/palettes/dark.always.css"; */
+/* @import "@ionic/angular/css/palettes/dark.class.css"; */
+@import "@ionic/angular/css/palettes/dark.system.css";
+
+:root {
+  --app-accent: #3880ff;
+  --app-accent-rgb: 56, 128, 255;
+}
+
+body.theme-akatsuki {
+  --app-accent: #e50914;
+  --app-accent-rgb: 229, 9, 20;
+  --ion-color-primary: #e50914;
+  --ion-color-primary-rgb: 229, 9, 20;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-shade: #ca0812;
+  --ion-color-primary-tint: #e8222c;
+}
+
+body.theme-sakura {
+  --app-accent: #ff69b4;
+  --app-accent-rgb: 255, 105, 180;
+  --ion-color-primary: #ff69b4;
+  --ion-color-primary-rgb: 255, 105, 180;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-shade: #e05ca0;
+  --ion-color-primary-tint: #ff78bc;
+}
+
+body.theme-cyberpunk {
+  --app-accent: #f3e600;
+  --app-accent-rgb: 243, 230, 0;
+  --ion-color-primary: #f3e600;
+  --ion-color-primary-rgb: 243, 230, 0;
+  --ion-color-primary-contrast: #000000;
+  --ion-color-primary-shade: #d6ca00;
+  --ion-color-primary-tint: #f4e91a;
+}
+
+/* Progress Bars */
+.anime-progress-container {
+  width: 100%;
+  height: 6px;
+  background: rgba(var(--ion-color-step-200-rgb, 200, 200, 200), 0.3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.anime-progress-fill {
+  height: 100%;
+  background: var(--app-accent);
+  transition: width 0.3s ease;
+}
+
+.watched-badge {
+  background: var(--app-accent);
+  color: var(--ion-color-primary-contrast);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
