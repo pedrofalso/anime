@@ -1,0 +1,11 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "www",
+  "framework": null,
+  "rewrites": [
+    {
+      "source": "/((?!assets|svg|.*\\.[a-zA-Z0-9]{2,4}$).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
