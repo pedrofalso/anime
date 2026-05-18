@@ -26,7 +26,8 @@ export class RegisterPage implements OnInit {
   }
 
 
-  ngOnInit() {
+  async ngOnInit() {
+    await this.authService.ready;
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/profile']);
     }

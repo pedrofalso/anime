@@ -60,17 +60,11 @@
             </ion-button>
           </div>
 
-          <!-- Tracking de episodios -->
-          <div class="episode-tracking" *ngIf="isLoggedIn">
-            <div class="ep-label">Episodios:</div>
-            <div class="ep-controls">
-              <ion-button fill="clear" size="small" (click)="decrementEpisode()">
-                <ion-icon name="remove-circle-outline"></ion-icon>
-              </ion-button>
-              <span class="ep-count"><strong>{{ watchedEpisodes }}</strong> / {{ anime.episodes || '?' }}</span>
-              <ion-button fill="clear" size="small" (click)="incrementEpisode()">
-                <ion-icon name="add-circle-outline"></ion-icon>
-              </ion-button>
+          <!-- Progreso de episodios resumen -->
+          <div class="episode-progress-summary" *ngIf="isLoggedIn && currentCategory">
+            <div class="progress-stats">
+              <span class="count">Progreso: <strong>{{ watchedEpisodes }}</strong> / {{ anime.episodes || '?' }}</span>
+              <span class="percent" *ngIf="anime.episodes > 0">{{ ((watchedEpisodes / anime.episodes) * 100) | number:'1.0-0' }}%</span>
             </div>
             <div class="anime-progress-container" *ngIf="anime.episodes > 0">
               <div class="anime-progress-fill" [style.width.%]="(watchedEpisodes / anime.episodes) * 100"></div>
@@ -90,6 +84,34 @@
         <section class="background-section" *ngIf="anime.background">
           <h2>Contexto</h2>
           <p>{{ anime.background }}</p>
+        </section>
+
+        <!-- Sección de Episodios Premium -->
+        <section class="episodes-section" *ngIf="isLoggedIn && currentCategory && (anime.episodes > 0 || watchedEpisodesList.length > 0)">
+          <div class="section-header-flex">
+            <h2>Seguimiento de Episodios</h2>
+            <div class="episodes-quick-actions">
+              <ion-button size="small" fill="outline" color="primary" (click)="markAllEpisodes(true)">
+                <ion-icon name="checkmark-done-outline" slot="start"></ion-icon>
+                Marcar todos
+              </ion-button>
+              <ion-button size="small" fill="outline" color="medium" (click)="markAllEpisodes(false)">
+                <ion-icon name="trash-outline" slot="start"></ion-icon>
+                Desmarcar todos
+              </ion-button>
+            </div>
+          </div>
+          <p class="section-desc">Haz clic en cada episodio para marcarlo como visto:</p>
+          
+          <div class="episodes-grid">
+            <button *ngFor="let ep of episodesArray" 
+                    [class.watched]="watchedEpisodesList.includes(ep)"
+                    (click)="toggleEpisode(ep)"
+                    class="ep-badge">
+              <span class="ep-num">{{ ep }}</span>
+              <ion-icon name="checkmark-circle" class="ep-check" *ngIf="watchedEpisodesList.includes(ep)"></ion-icon>
+            </button>
+          </div>
         </section>
 
         <section class="trailer-section" *ngIf="safeTrailerUrl">
@@ -122,10 +144,10 @@
                 <span>Tu nota:</span>
                 <div class="stars">
                   <ion-icon *ngFor="let star of [1,2,3,4,5,6,7,8,9,10]" 
-                            [name]="userRating >= star ? 'star' : 'star-outline'" 
+                            [name]="newCommentRating >= star ? 'star' : 'star-outline'" 
                             color="warning" 
-                            (click)="setRating(star)"></ion-icon>
-                  <span class="rating-value">{{ userRating }}/10</span>
+                            (click)="setCommentRating(star)"></ion-icon>
+                  <span class="rating-value">{{ newCommentRating }}/10</span>
                 </div>
               </div>
               <ion-textarea 
@@ -135,7 +157,7 @@
                 class="comment-input">
               </ion-textarea>
               <div class="form-actions">
-                <ion-button (click)="sendComment()" [disabled]="!newComment.trim() || userRating === 0" color="primary">
+                <ion-button (click)="sendComment()" [disabled]="!newComment.trim() || newCommentRating === 0" color="primary">
                   Publicar Reseña
                 </ion-button>
               </div>

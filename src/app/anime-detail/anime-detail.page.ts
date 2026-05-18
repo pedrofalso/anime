@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule, ToastController } from '@ionic/angular';
-import { ActivatedRoute, RouterModule } from '@angular/router';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { IonicModule } from '@ionic/angular';
+import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { AnimeService, AnimeItem } from '../services/anime.service';
-import { AuthService, Comment } from '../services/auth';
+import { AuthService } from '../services/auth';
 
 @Component({
   selector: 'app-anime-detail',
@@ -18,28 +19,38 @@ export class AnimeDetailPage implements OnInit {
   anime: AnimeItem | null = null;
   loading = true;
   error = false;
-
+                                                                                              
   isLoggedIn = false;
   currentCategory: string = '';
   isFavorite = false;
-  userRating: number = 0;
-  watchedEpisodes: number = 0;
+  isGuest = false;
 
+  // Comments / rating
   comments: any[] = [];
-  recommendations: AnimeItem[] = [];
   newComment: string = '';
-  isGuest: boolean = false;
+  newCommentRating = 0;
+  userRating = 0;
+
+  // Episodes tracking
+  watchedEpisodes = 0;
+  watchedEpisodesList: number[] = [];
+  episodesArray: number[] = [];
+  recommendations: AnimeItem[] = [];
+  // Cache trailer SafeResourceUrl to avoid recreating it every CD cycle
   safeTrailerUrl: SafeResourceUrl | null = null;
 
   constructor(
     private route: ActivatedRoute,
     private animeService: AnimeService,
     private sanitizer: DomSanitizer,
-    private authService: AuthService,
-    private toastController: ToastController
+    private authService: AuthService
   ) { }
 
-  ngOnInit() {
+  async ngOnInit() {
+    await this.authService.ready;
+    this.isLoggedIn = this.authService.isLoggedIn();
+    this.isGuest = this.authService.isGuestMode();
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadAnimeDetails(id);
@@ -49,25 +60,17 @@ export class AnimeDetailPage implements OnInit {
     }
   }
 
-  ionViewWillEnter() {
-    this.isLoggedIn = this.authService.isLoggedIn();
-    this.isGuest = !this.authService.getCurrentUser()?.email; // Simple check for guest
-    if (this.anime) {
-      this.checkUserLists();
-    }
-  }
-
   loadAnimeDetails(id: string) {
     this.animeService.getById(id).subscribe({
-      next: (data) => {
+      next: async (data) => {
         this.anime = data;
+        // build episodes array
+        this.episodesArray = Array.from({ length: (this.anime?.episodes || 0) }, (_, i) => i + 1);
+        // Cache trailer URL sanitized once
+        this.safeTrailerUrl = this.anime?.trailerUrl ? this.sanitizer.bypassSecurityTrustResourceUrl(this.anime.trailerUrl) : null;
         this.loading = false;
-        this.checkUserLists();
-        this.loadComments();
-        this.loadRecommendations(id);
-        if (this.anime.trailerUrl) {
-          this.safeTrailerUrl = this.sanitizer.bypassSecurityTrustResourceUrl(this.anime.trailerUrl);
-        }
+        await this.checkUserLists();
+        await this.loadComments();
       },
       error: () => {
         this.error = true;
@@ -76,60 +79,22 @@ export class AnimeDetailPage implements OnInit {
     });
   }
 
-  async loadComments() {
-    if (!this.anime) return;
-    this.comments = await this.authService.getComments(this.anime.id);
-  }
-
-  loadRecommendations(id: string) {
-    this.animeService.getRecommendations(id).subscribe(recs => {
-      this.recommendations = recs;
-    });
-  }
-
-  async sendComment() {
-    if (!this.newComment.trim() || !this.anime) return;
-    
-    if (this.isGuest) {
-      this.showToast('Los invitados no pueden comentar. Por favor, inicia sesión.', 'warning');
-      return;
-    }
-
-    const success = await this.authService.addComment(this.anime.id, this.newComment, this.userRating);
-    if (success) {
-      this.showToast('Comentario publicado con éxito.', 'success');
-      this.newComment = '';
-      this.loadComments();
-    } else {
-      this.showToast('Error al publicar el comentario. Revisa tu conexión.', 'danger');
-    }
-  }
-
-  async showToast(message: string, color: string = 'dark') {
-    const toast = await this.toastController.create({
-      message,
-      duration: 3000,
-      color,
-      position: 'bottom'
-    });
-    await toast.present();
-  }
-
   async checkUserLists() {
     if (!this.isLoggedIn || !this.anime) return;
     const lists = await this.authService.getUserLists();
-    
-    this.isFavorite = !!lists.favorites.find(a => a.id === this.anime!.id);
+
+    this.isFavorite = !!lists.favorites.find(a => String(a.id) === String(this.anime!.id));
 
     const categories: (keyof typeof lists)[] = ['watching', 'completed', 'onHold', 'dropped', 'planToWatch'];
     this.currentCategory = '';
-    this.watchedEpisodes = 0;
     for (const cat of categories) {
-      const found = lists[cat]?.find(a => a.id === this.anime!.id);
-      if (found) {
+      if (lists[cat] && lists[cat].find(a => String(a.id) === String(this.anime!.id))) {
         this.currentCategory = cat;
-        this.userRating = found.rating || 0;
-        this.watchedEpisodes = found.watched_episodes || 0;
+        const found = lists[cat].find(a => String(a.id) === String(this.anime!.id));
+        this.watchedEpisodes = found?.watched_episodes || 0;
+        this.watchedEpisodesList = [];
+        for (let i = 1; i <= (this.watchedEpisodes || 0); i++) this.watchedEpisodesList.push(i);
+        this.userRating = found?.rating || 0;
         break;
       }
     }
@@ -138,7 +103,9 @@ export class AnimeDetailPage implements OnInit {
   async onCategoryChange(event: any) {
     if (!this.isLoggedIn || !this.anime) return;
     const value = event.detail.value;
-    
+
+    console.log('onCategoryChange: ', value, 'anime id', this.anime?.id);
+
     // First remove from current if any
     if (this.currentCategory) {
       await this.authService.removeFromList(this.currentCategory as any, this.anime.id);
@@ -150,9 +117,9 @@ export class AnimeDetailPage implements OnInit {
         title: this.anime.title,
         image: this.anime.image,
         episodes: this.anime.episodes || 0,
-        watched_episodes: this.watchedEpisodes,
-        rating: this.userRating
+        rating: this.userRating || 0
       });
+      console.log('onCategoryChange: added to', value);
       this.currentCategory = value;
     } else {
       this.currentCategory = '';
@@ -161,9 +128,11 @@ export class AnimeDetailPage implements OnInit {
 
   async toggleFavorite() {
     if (!this.isLoggedIn || !this.anime) return;
+    console.log('toggleFavorite: currently', this.isFavorite, 'for', this.anime?.id);
     if (this.isFavorite) {
       await this.authService.removeFromList('favorites', this.anime.id);
       this.isFavorite = false;
+      console.log('toggleFavorite: removed favorite');
     } else {
       await this.authService.addToList('favorites', {
         id: this.anime.id,
@@ -172,69 +141,68 @@ export class AnimeDetailPage implements OnInit {
         episodes: this.anime.episodes || 0
       });
       this.isFavorite = true;
+      console.log('toggleFavorite: added favorite');
     }
   }
 
-  async setRating(val: number) {
-    if (!this.isLoggedIn || !this.anime || !this.currentCategory) return;
-    this.userRating = val;
-    await this.authService.addToList(this.currentCategory as any, {
-      id: this.anime.id,
-      title: this.anime.title,
-      image: this.anime.image,
-      episodes: this.anime.episodes || 0,
-      watched_episodes: this.watchedEpisodes,
-      rating: this.userRating
-    });
-  }
-
-  async incrementEpisode() {
-    if (!this.anime || this.watchedEpisodes >= (this.anime.episodes || 999)) return;
-    this.watchedEpisodes++;
-    await this.updateEpisodesInDb();
-  }
-
-  async decrementEpisode() {
-    if (this.watchedEpisodes <= 0) return;
-    this.watchedEpisodes--;
-    await this.updateEpisodesInDb();
-  }
-
-  private async updateEpisodesInDb() {
-    if (!this.anime || !this.isLoggedIn) return;
-    
+  // --- Rating and Comments ---
+  async setRating(star: number) {
+    if (!this.isLoggedIn || !this.anime) return;
+    this.userRating = star;
     if (this.currentCategory) {
-      await this.authService.updateWatchedEpisodes(this.anime.id, this.watchedEpisodes);
-      
-      // Auto-complete if episodes match
-      if (this.anime.episodes > 0 && this.watchedEpisodes === this.anime.episodes && this.currentCategory !== 'completed') {
-        await this.authService.addToList('completed', {
-          id: this.anime.id,
-          title: this.anime.title,
-          image: this.anime.image,
-          episodes: this.anime.episodes,
-          watched_episodes: this.watchedEpisodes,
-          rating: this.userRating
-        });
-        this.currentCategory = 'completed';
-        this.showToast('¡Anime completado!', 'success');
-      }
-    } else {
-      // If not in a list, add to watching by default
-      await this.authService.addToList('watching', {
+      await this.authService.addToList(this.currentCategory as any, {
         id: this.anime.id,
         title: this.anime.title,
         image: this.anime.image,
         episodes: this.anime.episodes || 0,
-        watched_episodes: this.watchedEpisodes,
         rating: this.userRating
       });
-      this.currentCategory = 'watching';
     }
   }
 
-  // Replaced by safeTrailerUrl variable to avoid re-render loops
-  /*
-  getSafeTrailerUrl(): SafeResourceUrl | null { ... }
-  */
+  setCommentRating(star: number) {
+    this.newCommentRating = star;
+  }
+
+  async sendComment() {
+    if (!this.anime) return;
+    if (!this.isLoggedIn) return;
+    const success = await this.authService.addComment(String(this.anime.id), this.newComment.trim(), this.newCommentRating || undefined);
+    if (success) {
+      this.newComment = '';
+      this.newCommentRating = 0;
+      await this.loadComments();
+    }
+  }
+
+  async loadComments() {
+    if (!this.anime) return;
+    this.comments = await this.authService.getComments(String(this.anime.id));
+  }
+
+  // --- Episodes tracking ---
+  async toggleEpisode(ep: number) {
+    if (!this.isLoggedIn || !this.anime || !this.currentCategory) return;
+    const idx = this.watchedEpisodesList.indexOf(ep);
+    if (idx === -1) {
+      this.watchedEpisodesList.push(ep);
+    } else {
+      this.watchedEpisodesList.splice(idx, 1);
+    }
+    this.watchedEpisodes = this.watchedEpisodesList.length;
+    await this.authService.updateWatchedEpisodes(String(this.anime.id), this.watchedEpisodes);
+  }
+
+  async markAllEpisodes(mark: boolean) {
+    if (!this.isLoggedIn || !this.anime || !this.currentCategory) return;
+    if (mark) {
+      this.watchedEpisodesList = this.episodesArray.slice();
+    } else {
+      this.watchedEpisodesList = [];
+    }
+    this.watchedEpisodes = this.watchedEpisodesList.length;
+    await this.authService.updateWatchedEpisodes(String(this.anime.id), this.watchedEpisodes);
+  }
+
+  // safeTrailerUrl property is updated when the anime is loaded; template binds directly to it.
 }

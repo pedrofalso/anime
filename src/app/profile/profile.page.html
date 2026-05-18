@@ -23,7 +23,7 @@
     </div>
 
     <!-- Banner de Perfil -->
-    <div class="profile-banner" [style.background-image]="'url(' + (user.bannerUrl || 'assets/default-banner.jpg') + ')'">
+    <div class="profile-banner" [ngStyle]="{ 'background-image': user.bannerUrl ? 'url(' + user.bannerUrl + ')' : 'none' }">
       <div class="banner-overlay" *ngIf="!isPublicView" (click)="bannerInput.click()">
         <ion-icon name="camera-outline"></ion-icon>
         <span>Cambiar Portada</span>

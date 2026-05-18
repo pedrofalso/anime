@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { IonicModule, ToastController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -31,8 +31,22 @@ export class ProfilePage implements OnInit {
     public themeService: ThemeService
   ) { }
 
+  private listsSub: any;
+
   ngOnInit() {
     this.loadProfile();
+    // Subscribe to list changes so profile refreshes when user updates lists elsewhere
+    this.listsSub = this.authService.listsChanged.subscribe(() => {
+      // Fire-and-forget refresh
+      this.authService.getUserLists().then(l => {
+        this.lists = l;
+        this.calculateStats();
+      }).catch(e => console.warn('Error refreshing lists after change', e));
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.listsSub && this.listsSub.unsubscribe) this.listsSub.unsubscribe();
   }
 
   ionViewWillEnter() {
@@ -40,6 +54,7 @@ export class ProfilePage implements OnInit {
   }
 
   async loadProfile() {
+    await this.authService.ready;
     const usernameParam = this.route.snapshot.paramMap.get('username');
     this.isPublicView = !!usernameParam;
     

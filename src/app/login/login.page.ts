@@ -25,7 +25,8 @@ export class LoginPage implements OnInit {
   }
 
 
-  ngOnInit() {
+  async ngOnInit() {
+    await this.authService.ready;
     if (this.authService.isLoggedIn()) {
       this.router.navigate(['/profile']);
     }
@@ -37,12 +38,30 @@ export class LoginPage implements OnInit {
       return;
     }
 
-    const success = await this.authService.login(this.username.trim(), this.password.trim());
-    if (success) {
-      this.error = '';
-      this.router.navigate(['/anime-list']);
-    } else {
-      this.error = 'Usuario o contraseña incorrectos.';
+    try {
+      this.error = 'Iniciando sesión...'; 
+      
+      // Creamos un timeout para detectar si Supabase se queda bloqueado por el Navigator Lock
+      const timeoutPromise = new Promise<boolean>((_, reject) => 
+        setTimeout(() => reject(new Error('Bloqueo interno del navegador detectado. Por favor, CIERRA ESTA PESTAÑA y vuelve a abrir localhost:8100 en una nueva.')), 5000)
+      );
+
+      const success = await Promise.race([
+        this.authService.login(this.username.trim(), this.password.trim()),
+        timeoutPromise
+      ]);
+
+      if (success) {
+        this.error = '¡Éxito! Redirigiendo...';
+        setTimeout(() => {
+          this.router.navigate(['/anime-list']);
+        }, 100);
+      } else {
+        this.error = 'Usuario o contraseña incorrectos.';
+      }
+    } catch (e: any) {
+      this.error = 'Fallo crítico: ' + (e.message || String(e));
+      console.error('Error in login page:', e);
     }
   }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
@@ -19,7 +19,7 @@ interface AnimeCategory {
   standalone: true,
   imports: [IonicModule, CommonModule, FormsModule, HttpClientModule, RouterModule]
 })
-export class AnimeListPage implements OnInit {
+export class AnimeListPage implements OnInit, OnDestroy {
 
   searchQuery = '';
   selectedGenre = '';
@@ -52,17 +52,29 @@ export class AnimeListPage implements OnInit {
   ];
 
   constructor(private animeService: AnimeService, private router: Router, private authService: AuthService) { }
-
-  ngOnInit() {
-    this.loadCatalog();
-  }
+  private listsSub: any;
 
   async ionViewWillEnter() {
+    await this.authService.ready;
     this.isLoggedIn = this.authService.isLoggedIn();
     this.user = this.authService.getCurrentUser();
     if (this.isLoggedIn) {
       this.userLists = await this.authService.getUserLists();
     }
+  }
+
+  ngOnInit() {
+    // already loads catalog in original ngOnInit; keep behavior and subscribe to list changes
+    this.loadCatalog();
+    this.listsSub = this.authService.listsChanged.subscribe(() => {
+      this.authService.getUserLists().then(l => {
+        this.userLists = l;
+      }).catch(e => console.warn('Error refreshing userLists', e));
+    });
+  }
+
+  ngOnDestroy() {
+    if (this.listsSub && this.listsSub.unsubscribe) this.listsSub.unsubscribe();
   }
 
   private loadCatalog() {
@@ -170,24 +182,23 @@ export class AnimeListPage implements OnInit {
   }
 
   viewAnime(anime: AnimeItem) {
-    const url = this.router.serializeUrl(
-      this.router.createUrlTree(['/anime', anime.id])
-    );
-    window.open(url, '_blank');
+    this.router.navigate(['/anime', anime.id]);
   }
 
   isFavorite(anime: AnimeItem): boolean {
     if (!this.isLoggedIn) return false;
-    return !!this.userLists.favorites.find(a => a.id === anime.id);
+    return !!this.userLists.favorites.find(a => String(a.id) === String(anime.id));
   }
 
   async toggleFavorite(event: Event, anime: AnimeItem) {
     event.stopPropagation(); // Prevent opening the anime detail page
     if (!this.isLoggedIn) return;
+    console.log('anime-list.toggleFavorite clicked for', anime.id);
     
     if (this.isFavorite(anime)) {
       await this.authService.removeFromList('favorites', anime.id);
-      this.userLists.favorites = this.userLists.favorites.filter(a => a.id !== anime.id);
+      this.userLists.favorites = this.userLists.favorites.filter(a => String(a.id) !== String(anime.id));
+      console.log('anime-list.toggleFavorite removed', anime.id);
     } else {
       const newItem = {
         id: anime.id,
@@ -197,6 +208,7 @@ export class AnimeListPage implements OnInit {
       };
       await this.authService.addToList('favorites', newItem);
       this.userLists.favorites.push(newItem);
+      console.log('anime-list.toggleFavorite added', anime.id);
     }
   }
 }
