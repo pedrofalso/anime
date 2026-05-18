@@ -12,6 +12,9 @@
     "lint": "ng lint"
   },
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "dependencies": {
     "@angular/animations": "^20.0.0",
     "@angular/common": "^20.0.0",
@@ -62,9 +65,6 @@
     "typescript": "~5.9.0"
   },
   "description": "An Ionic project",
-  "engines": {
-    "node": "18.x"
-  },
   "overrides": {
     "rimraf": "^4.0.0",
     "glob": "^8.1.0"
